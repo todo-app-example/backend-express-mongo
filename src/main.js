@@ -19,15 +19,17 @@ const todoModel = mongoose.model("todos", todoSchema);
 
 const todoRouter = express.Router();
 
+// Get TODO
 todoRouter.get("/", async (req, res) => {
   try {
-    const result = await todoModel.find().lean();
+    const result = await todoModel.find({}, { __v: 0 });
     res.status(200).json(result);
   } catch {
     res.status(400).json([]);
   }
 });
 
+// Create TODO
 todoRouter.post("/", async (req, res) => {
   try {
     const { title } = req.body;
@@ -38,13 +40,35 @@ todoRouter.post("/", async (req, res) => {
     });
 
     const result = await todoObject.save();
-
     res.status(200).json({
-      title: result.title,
       _id: result._id,
+      title: result.title,
+      createTime: result.createTime,
     });
   } catch {
-    res.status(400).json([]);
+    res.sendStatus(400).json([]);
+  }
+});
+
+// Update TODO
+todoRouter.put("/", async (req, res) => {
+  try {
+    const { _id, title, isFinished } = req.body;
+
+    if (isFinished === 1) {
+      const result = await todoModel.updateOne(
+        { _id: _id },
+        { title: title, finishedTime: Date.now() }
+      );
+      console.log(result);
+      res.sendStatus(200);
+    } else {
+      const result = await todoModel.updateOne({ _id: _id }, { title: title });
+      res.sendStatus(200);
+    }
+  } catch (e) {
+    console.log(e);
+    res.sendStatus(400);
   }
 });
 
